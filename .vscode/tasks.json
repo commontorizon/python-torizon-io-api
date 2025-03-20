@@ -1,0 +1,101 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "download-spec",
+            "hide": true,
+            "command": "curl",
+            "type": "shell",
+            "args": [
+                "-o",
+                "${workspaceFolder}/torizon-openapi.yaml",
+                "https://app.torizon.io/api/docs/torizon-openapi.yaml"
+            ],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": "build"
+        },
+        {
+            "label": "generate",
+            "command": "docker",
+            "type": "shell",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/local",
+                "--user",
+                "1000:1000",
+                "openapitools/openapi-generator-cli",
+                "generate",
+                "-i", "/local/torizon-openapi.yaml",
+                "-g", "python",
+                "-o", "/local/generated",
+                "--additional-properties", "packageName=torizon_io_api",
+                "--additional-properties", "packageVersion=0.0.2",
+                "--additional-properties", "projectName=torizon-io-api"
+            ],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "download-spec"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "build-package",
+            "hide": false,
+            "command": "poetry",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/generated"
+            },
+            "args": [
+                "build"
+            ],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "group": "build"
+        },
+        {
+            "label": "push-pip-package",
+            "hide": false,
+            "command": "poetry",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/generated"
+            },
+            "args": [
+                "run",
+                "twine",
+                "upload",
+                "--config-file", "${workspaceFolder}/.pypirc",
+                "dist/*"
+            ],
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "always"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "build-package"
+            ],
+            "group": "build"
+        }
+    ]
+}
